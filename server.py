@@ -266,11 +266,17 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
         # Create temporary output file in writable directory
         temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}.pdf')
 
+        # Save current working directory and change to temp directory
+        original_cwd = os.getcwd()
+
         try:
             # Ensure output directory exists and is writable
             output_dir = os.path.dirname(os.path.abspath(output_path))
             if output_dir and not os.path.exists(output_dir):
                 os.makedirs(output_dir, exist_ok=True)
+
+            # Change to temp directory so pandoc writes temp files there
+            os.chdir(TEMP_DIR)
 
             # Convert to temp file first (in writable directory)
             pypandoc.convert_text(
@@ -293,6 +299,12 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
                 text=f"✓ Successfully converted markdown to PDF: {output_path}\n\nSettings:\n- Font: {font_family}\n- Font size: {font_size}\n- Page size: {page_size}\n- Margins: {margin}"
             )]
         finally:
+            # Restore original working directory
+            try:
+                os.chdir(original_cwd)
+            except Exception:
+                pass  # Ignore if we can't restore cwd
+
             # Clean up temporary files
             if os.path.exists(css_path):
                 os.unlink(css_path)
@@ -355,6 +367,9 @@ async def convert_file(args: dict) -> list[TextContent]:
         output_ext = os.path.splitext(output_path)[1] or '.out'
         temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}{output_ext}')
 
+        # Save current working directory and change to temp directory
+        original_cwd = os.getcwd()
+
         try:
             # Ensure output directory exists and is writable
             output_dir = os.path.dirname(os.path.abspath(output_path))
@@ -365,6 +380,9 @@ async def convert_file(args: dict) -> list[TextContent]:
             if extra_args is None:
                 extra_args = []
             extra_args.append('--sandbox=false')
+
+            # Change to temp directory so pandoc writes temp files there
+            os.chdir(TEMP_DIR)
 
             # Convert to temp file first (in writable directory)
             pypandoc.convert_file(
@@ -383,6 +401,12 @@ async def convert_file(args: dict) -> list[TextContent]:
                 text=f"✓ Successfully converted {input_path} to {output_path}"
             )]
         finally:
+            # Restore original working directory
+            try:
+                os.chdir(original_cwd)
+            except Exception:
+                pass  # Ignore if we can't restore cwd
+
             # Clean up temporary files
             if css_path and os.path.exists(css_path):
                 os.unlink(css_path)

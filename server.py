@@ -254,6 +254,11 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
         temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}.pdf')
 
         try:
+            # Ensure output directory exists and is writable
+            output_dir = os.path.dirname(os.path.abspath(output_path))
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+
             # Convert to temp file first (in writable directory)
             pypandoc.convert_text(
                 markdown_content,
@@ -262,7 +267,8 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
                 outputfile=temp_output,
                 extra_args=[
                     '--pdf-engine=weasyprint',
-                    f'--css={css_path}'
+                    f'--css={css_path}',
+                    '--sandbox=false'  # Disable sandbox to allow temp file creation
                 ]
             )
 
@@ -281,9 +287,16 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
                 os.unlink(temp_output)
 
     except Exception as e:
+        error_msg = f"Error converting markdown to PDF: {str(e)}\n\n"
+        error_msg += f"Debug info:\n"
+        error_msg += f"- Temp directory: {TEMP_DIR}\n"
+        error_msg += f"- Temp output: {temp_output}\n"
+        error_msg += f"- Final output: {output_path}\n"
+        error_msg += f"- CSS path: {css_path}\n"
+        error_msg += f"- Current working directory: {os.getcwd()}\n"
         return [TextContent(
             type="text",
-            text=f"Error converting markdown to PDF: {str(e)}"
+            text=error_msg
         )]
 
 
@@ -325,13 +338,23 @@ async def convert_file(args: dict) -> list[TextContent]:
         temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}{output_ext}')
 
         try:
+            # Ensure output directory exists and is writable
+            output_dir = os.path.dirname(os.path.abspath(output_path))
+            if output_dir and not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+
+            # Add sandbox=false to extra args
+            if extra_args is None:
+                extra_args = []
+            extra_args.append('--sandbox=false')
+
             # Convert to temp file first (in writable directory)
             pypandoc.convert_file(
                 input_path,
                 to_format if to_format else None,
                 format=from_format,
                 outputfile=temp_output,
-                extra_args=extra_args if extra_args else None
+                extra_args=extra_args
             )
 
             # Copy from temp location to final destination
@@ -349,9 +372,16 @@ async def convert_file(args: dict) -> list[TextContent]:
                 os.unlink(temp_output)
 
     except Exception as e:
+        error_msg = f"Error converting file: {str(e)}\n\n"
+        error_msg += f"Debug info:\n"
+        error_msg += f"- Input path: {input_path}\n"
+        error_msg += f"- Output path: {output_path}\n"
+        error_msg += f"- Temp directory: {TEMP_DIR}\n"
+        error_msg += f"- Temp output: {temp_output}\n"
+        error_msg += f"- Current working directory: {os.getcwd()}\n"
         return [TextContent(
             type="text",
-            text=f"Error converting file: {str(e)}"
+            text=error_msg
         )]
 
 

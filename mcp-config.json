@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pandoc": {
+      "command": "/Users/ashah/miniforge3/envs/energy311/bin/python",
+      "args": ["/Users/ashah/work/pandoc-mcp/server.py"]
+    }
+  }
+}

@@ -237,6 +237,10 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
         markdown_content = args["markdown_content"]
         output_path = args["output_path"]
 
+        # If output_path is relative (not absolute), prepend /tmp/
+        if not os.path.isabs(output_path):
+            output_path = os.path.join("/tmp", output_path)
+
         # Get optional parameters
         font_family = args.get("font_family", "Helvetica")
         font_size = args.get("font_size", "11pt")
@@ -314,6 +318,11 @@ async def convert_file(args: dict) -> list[TextContent]:
     try:
         input_path = args["input_path"]
         output_path = args["output_path"]
+
+        # If output_path is relative (not absolute), prepend /tmp/
+        if not os.path.isabs(output_path):
+            output_path = os.path.join("/tmp", output_path)
+
         from_format = args.get("from_format")
         to_format = args.get("to_format")
         pdf_engine = args.get("pdf_engine", "weasyprint")

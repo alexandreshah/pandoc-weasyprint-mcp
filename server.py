@@ -250,27 +250,35 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
             css_file.write(css_content)
             css_path = css_file.name
 
+        # Create temporary output file in writable directory
+        temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}.pdf')
+
         try:
-            # Convert using pypandoc
+            # Convert to temp file first (in writable directory)
             pypandoc.convert_text(
                 markdown_content,
                 'pdf',
                 format='markdown',
-                outputfile=output_path,
+                outputfile=temp_output,
                 extra_args=[
                     '--pdf-engine=weasyprint',
                     f'--css={css_path}'
                 ]
             )
 
+            # Copy from temp location to final destination
+            shutil.copy2(temp_output, output_path)
+
             return [TextContent(
                 type="text",
                 text=f"✓ Successfully converted markdown to PDF: {output_path}\n\nSettings:\n- Font: {font_family}\n- Font size: {font_size}\n- Page size: {page_size}\n- Margins: {margin}"
             )]
         finally:
-            # Clean up temporary CSS file
+            # Clean up temporary files
             if os.path.exists(css_path):
                 os.unlink(css_path)
+            if os.path.exists(temp_output):
+                os.unlink(temp_output)
 
     except Exception as e:
         return [TextContent(
@@ -312,24 +320,33 @@ async def convert_file(args: dict) -> list[TextContent]:
         else:
             css_path = None
 
+        # Create temporary output file in writable directory
+        output_ext = os.path.splitext(output_path)[1] or '.out'
+        temp_output = os.path.join(TEMP_DIR, f'output_{os.getpid()}{output_ext}')
+
         try:
-            # Convert using pypandoc
+            # Convert to temp file first (in writable directory)
             pypandoc.convert_file(
                 input_path,
                 to_format if to_format else None,
                 format=from_format,
-                outputfile=output_path,
+                outputfile=temp_output,
                 extra_args=extra_args if extra_args else None
             )
+
+            # Copy from temp location to final destination
+            shutil.copy2(temp_output, output_path)
 
             return [TextContent(
                 type="text",
                 text=f"✓ Successfully converted {input_path} to {output_path}"
             )]
         finally:
-            # Clean up temporary CSS file
+            # Clean up temporary files
             if css_path and os.path.exists(css_path):
                 os.unlink(css_path)
+            if os.path.exists(temp_output):
+                os.unlink(temp_output)
 
     except Exception as e:
         return [TextContent(

@@ -5,8 +5,10 @@ Provides document conversion tools with customizable fonts and styling.
 """
 
 import asyncio
+import atexit
 import json
 import os
+import shutil
 import tempfile
 from typing import Any, Optional
 import pypandoc
@@ -14,6 +16,25 @@ from mcp.server import Server
 from mcp.types import Tool, TextContent
 from mcp.server.stdio import stdio_server
 
+
+# Set up a writable temporary directory for pandoc
+TEMP_DIR = tempfile.mkdtemp(prefix="pandoc_mcp_")
+os.environ['TMPDIR'] = TEMP_DIR
+os.environ['TEMP'] = TEMP_DIR
+os.environ['TMP'] = TEMP_DIR
+
+
+def cleanup_temp_dir():
+    """Clean up temporary directory on exit."""
+    try:
+        if os.path.exists(TEMP_DIR):
+            shutil.rmtree(TEMP_DIR)
+    except Exception:
+        pass  # Ignore cleanup errors
+
+
+# Register cleanup handler
+atexit.register(cleanup_temp_dir)
 
 # Initialize the MCP server
 app = Server("pandoc-mcp")
@@ -224,8 +245,8 @@ async def convert_md_to_pdf(args: dict) -> list[TextContent]:
             css_content = css_content.replace("size: letter;", f"size: {page_size};")
             css_content = css_content.replace("margin: 1in;", f"margin: {margin};")
 
-        # Create temporary CSS file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.css', delete=False) as css_file:
+        # Create temporary CSS file in our writable temp directory
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.css', delete=False, dir=TEMP_DIR) as css_file:
             css_file.write(css_content)
             css_path = css_file.name
 
@@ -284,7 +305,7 @@ async def convert_file(args: dict) -> list[TextContent]:
 
         # Add CSS if provided
         if css:
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.css', delete=False) as css_file:
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.css', delete=False, dir=TEMP_DIR) as css_file:
                 css_file.write(css)
                 css_path = css_file.name
             extra_args.append(f'--css={css_path}')

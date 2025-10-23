@@ -18,7 +18,16 @@ from mcp.server.stdio import stdio_server
 
 
 # Set up a writable temporary directory for pandoc
-TEMP_DIR = tempfile.mkdtemp(prefix="pandoc_mcp_")
+# Can be configured via PANDOC_MCP_TMPDIR environment variable
+CUSTOM_TMPDIR = os.environ.get('PANDOC_MCP_TMPDIR')
+if CUSTOM_TMPDIR:
+    # Use custom directory if specified
+    TEMP_DIR = os.path.join(CUSTOM_TMPDIR, f"pandoc_mcp_{os.getpid()}")
+    os.makedirs(TEMP_DIR, exist_ok=True)
+else:
+    # Use system default temp directory
+    TEMP_DIR = tempfile.mkdtemp(prefix="pandoc_mcp_")
+
 os.environ['TMPDIR'] = TEMP_DIR
 os.environ['TEMP'] = TEMP_DIR
 os.environ['TMP'] = TEMP_DIR

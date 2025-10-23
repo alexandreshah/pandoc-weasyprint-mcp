@@ -80,6 +80,26 @@ For this installation:
 }
 ```
 
+**Optional: Custom Temporary Directory**
+
+By default, the server uses the system's default temp directory. To specify a custom temp directory (useful for restricted environments), add the `env` section:
+
+```json
+{
+  "mcpServers": {
+    "pandoc": {
+      "command": "/Users/ashah/miniforge3/envs/energy311/bin/python",
+      "args": ["/Users/ashah/work/pandoc-mcp/server.py"],
+      "env": {
+        "PANDOC_MCP_TMPDIR": "/tmp"
+      }
+    }
+  }
+}
+```
+
+The `PANDOC_MCP_TMPDIR` environment variable can be set to any writable directory where you want pandoc to store temporary files during conversion.
+
 ### 4. Restart Claude Code
 
 After updating the MCP configuration, restart Claude Code to load the new server.
@@ -242,6 +262,36 @@ weasyprint --version
 
 ### Font Issues
 If a font isn't rendering correctly, make sure it's installed on your system. WeasyPrint uses system fonts.
+
+### "Permission denied (Read-only file system)"
+If you get permission errors during PDF conversion:
+
+1. **Set a custom temp directory** using the `PANDOC_MCP_TMPDIR` environment variable in your MCP config:
+   ```json
+   {
+     "mcpServers": {
+       "pandoc": {
+         "command": "/path/to/python",
+         "args": ["/path/to/server.py"],
+         "env": {
+           "PANDOC_MCP_TMPDIR": "/tmp"
+         }
+       }
+     }
+   }
+   ```
+
+2. **Check the error message** - The server now includes debug information showing:
+   - Temp directory path
+   - Current working directory
+   - Output paths
+
+3. **Verify write permissions** - Make sure the specified temp directory is writable by your user.
+
+**Default temp directory locations:**
+- macOS: `/var/folders/.../T` (user-specific)
+- Linux: `/tmp` or `$TMPDIR`
+- Custom: Set via `PANDOC_MCP_TMPDIR`
 
 ### MCP Server Not Loading
 1. Check that the Python path in your MCP config is correct

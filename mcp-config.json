@@ -2,7 +2,11 @@
   "mcpServers": {
     "pandoc": {
       "command": "/Users/ashah/miniforge3/envs/energy311/bin/python",
-      "args": ["/Users/ashah/work/pandoc-mcp/server.py"]
+      "args": ["/Users/ashah/work/pandoc-mcp/server.py"],
+      "env": {
+        "_comment": "Optional: Set custom temp directory for pandoc operations",
+        "PANDOC_MCP_TMPDIR": "/tmp"
+      }
     }
   }
 }
